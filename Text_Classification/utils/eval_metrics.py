@@ -131,50 +131,52 @@ if __name__ == "__main__":
 
 def compare_metrics(y_true, y_pred, task):
     labels = ["sadness", "joy", "love", "anger", "fear", "surprise"]
+
+    # Custom metrics
     cm, _ = confusion_matrix(y_true, y_pred)
     acc = accuracy_score(y_true, y_pred)
-    precison, _ = precision_score(y_true, y_pred)
-    recall, _ = recall_score(y_true, y_pred)
-    f1, _ = f1_score(y_true, y_pred)
+    precision_macro, precision_per_class = precision_score(y_true, y_pred)
+    recall_macro, recall_per_class = recall_score(y_true, y_pred)
+    f1_macro, f1_per_class = f1_score(y_true, y_pred)
 
+    # Sklearn reference
     cm_2 = sk.confusion_matrix(y_true, y_pred)
     acc_2 = sk.accuracy_score(y_true, y_pred)
-    precison_2 = sk.precision_score(y_true, y_pred, average="macro", zero_division=0)
+    precision_2 = sk.precision_score(y_true, y_pred, average="macro", zero_division=0)
     recall_2 = sk.recall_score(y_true, y_pred, average="macro")
     f1_2 = sk.f1_score(y_true, y_pred, average="macro")
 
+    # === 1. Macro-Averaged Metrics ===
     scalar_results = {
-        "Metric": [
-            "Accuracy",
-            "Precision (Macro)",
-            "Recall (Macro)",
-            "F1-Score (Macro)",
-        ],
-        "Custom Implementation": [acc, precison, recall, f1],
-        "Sklearn (Reference)": [acc_2, precison_2, recall_2, f1_2],
+        "Metric": ["Accuracy", "Precision (Macro)", "Recall (Macro)", "F1-Score (Macro)"],
+        "Custom Implementation": [acc, precision_macro, recall_macro, f1_macro],
+        "Sklearn (Reference)": [acc_2, precision_2, recall_2, f1_2],
     }
 
-    df_scalars = pd.DataFrame(scalar_results)
-    df_scalars = df_scalars.set_index("Metric")
-
-    # --------------------
-    # 2. Print Results
-    # --------------------
+    df_scalars = pd.DataFrame(scalar_results).set_index("Metric")
 
     print("\n" + "=" * 70)
-    print(f"            {task} EVALUATION METRICS COMPARISON (SCALAR)")
+    print(f"            {task} EVALUATION METRICS COMPARISON (MACRO AVG)")
     print("=" * 70)
     print(df_scalars.to_string(float_format="%.4f"))
     print("=" * 70 + "\n")
 
-    # --------------------
-    # 3. Print Confusion Matrices Separately
-    # --------------------
+    # === 2. Per-Class Metrics Table ===
+    per_class_df = pd.DataFrame({
+        "Class": labels,
+        "Precision": precision_per_class,
+        "Recall": recall_per_class,
+        "F1-Score": f1_per_class,
+    }).set_index("Class")
 
-    # Note: We use np.array_str for clean printing if they are numpy arrays.
+    print("\n" + "=" * 70)
+    print(f"            {task} PER-CLASS METRICS (CUSTOM)")
+    print("=" * 70)
+    print(per_class_df.to_string(float_format="%.4f"))
+    print("=" * 70 + "\n")
 
+    # === 3. Confusion Matrices ===
     print("--- Confusion Matrix (Custom Implementation) ---")
-    # Use pd.DataFrame for a nicer, labeled matrix display
     cm_df_custom = pd.DataFrame(
         cm,
         index=[f"True_{i}" for i in labels],
