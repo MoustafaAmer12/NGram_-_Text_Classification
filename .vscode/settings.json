@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./Text_Classification",
+        "./N-Gram_LM"
+    ]
+}
